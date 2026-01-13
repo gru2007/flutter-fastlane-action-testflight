@@ -18,7 +18,9 @@ platform :ios do
     build_number = options[:build_number]
     release_note = options[:release_note]
     release_note_language = options[:release_note_language]
-    skip_wait_processing = options[:skip_wait_processing]
+    # NOTE: fastlane options arrive as Strings from the action runner.
+    # In Ruby, even "false" is truthy, so we must coerce to a real boolean.
+    skip_wait_processing = options[:skip_wait_processing].to_s.strip.downcase == "true"
     bundle_identifier = options[:bundle_identifier]
     build_extra = options[:build_extra]
     build_dest_path = options[:build_dest_path]
@@ -114,20 +116,28 @@ platform :ios do
 
       # If release notes are provided, automatically distribute to external testers
       if auto_distribute_external
-        upload_params[:distribute_external] = true
         upload_params[:changelog] = release_note
         
         # Groups parameter is REQUIRED for distribute_external to work
         if testflight_groups && !testflight_groups.strip.empty?
           groups_array = testflight_groups.split(",").map(&:strip).reject(&:empty?)
+          upload_params[:distribute_external] = true
           upload_params[:groups] = groups_array
           puts "🚀 Will automatically distribute to external testers in groups: #{groups_array.join(", ")}"
+          # IMPORTANT:
+          # If skip_waiting_for_build_processing=true AND changelog is set,
+          # fastlane will wait for processing, set the changelog and then skip
+          # the remaining processing steps (including distribution to groups).
+          # So we must NOT skip processing when doing external distribution.
+          upload_params[:skip_waiting_for_build_processing] = false
         else
-          # Try to distribute to all groups by not specifying groups parameter
-          # This may work if there are existing external groups
-          puts "⚠️  Warning: No testflight groups specified."
-          puts "💡 Tip: Add 'testflight-groups' parameter (e.g., 'External Testers') for reliable distribution."
-          puts "🚀 Attempting to distribute to all external groups (may not work without explicit groups)..."
+          # Without groups, distribute_external won't work properly
+          # So we disable it and show a clear warning
+          upload_params[:distribute_external] = false
+          puts "❌ ERROR: Cannot distribute to external testers without testflight-groups parameter!"
+          puts "⚠️  Release notes provided but no groups specified - distribution DISABLED."
+          puts "💡 Solution: Add 'testflight-groups' parameter in your workflow (e.g., 'External Testers')"
+          puts "📦 Uploading to TestFlight (internal only) - external distribution skipped."
         end
       else
         upload_params[:distribute_external] = false
