@@ -22,6 +22,7 @@ platform :ios do
     bundle_identifier = options[:bundle_identifier]
     build_extra = options[:build_extra]
     build_dest_path = options[:build_dest_path]
+    testflight_groups = options[:testflight_groups] # Comma-separated list of group names
     ios_dir = File.expand_path("../", __dir__)
 
     # Determine whether to automatically distribute to external testers
@@ -115,7 +116,19 @@ platform :ios do
       if auto_distribute_external
         upload_params[:distribute_external] = true
         upload_params[:changelog] = release_note
-        puts "🚀 Will automatically distribute to external testers with release notes."
+        
+        # Groups parameter is REQUIRED for distribute_external to work
+        if testflight_groups && !testflight_groups.strip.empty?
+          groups_array = testflight_groups.split(",").map(&:strip).reject(&:empty?)
+          upload_params[:groups] = groups_array
+          puts "🚀 Will automatically distribute to external testers in groups: #{groups_array.join(", ")}"
+        else
+          # Try to distribute to all groups by not specifying groups parameter
+          # This may work if there are existing external groups
+          puts "⚠️  Warning: No testflight groups specified."
+          puts "💡 Tip: Add 'testflight-groups' parameter (e.g., 'External Testers') for reliable distribution."
+          puts "🚀 Attempting to distribute to all external groups (may not work without explicit groups)..."
+        end
       else
         upload_params[:distribute_external] = false
         puts "📦 Uploading to TestFlight (internal only)."
