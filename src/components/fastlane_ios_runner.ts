@@ -116,6 +116,7 @@ export class FastlaneIosRunner extends FastlaneRunner {
                 "skip_wait_processing": config.skipWaitProcessing,
                 "bundle_identifier": config.iosAppId,
                 "appstore_team_id": config.appstoreTeamId,
+                ...(config.testflightGroups ? { "testflight_groups": config.testflightGroups } : {}),
             },
             { // ENV
                 "APPSTORE_CONNECT_ISSUER_ID": config.appstoreConnectIssuerId,

@@ -118,3 +118,10 @@ inputs:
       iOS builds require a macOS runner.
     default: all
     required: false
+
+  testflight-groups:
+    description: >
+      Comma-separated list of TestFlight group names for external distribution.
+      Required when release-note is provided to enable automatic external distribution.
+      Example: "External Testers, Beta Testers"
+    required: false

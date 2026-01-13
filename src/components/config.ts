@@ -33,6 +33,7 @@ export class Config {
     ipaDestPath = getInput("ipa-dest-path") || "./build/release.ipa";
     draft = getInput("draft") || "false";
     platform = getInput("platform") || (this.isMac ? "all" : "android");
+    testflightGroups = getInput("testflight-groups") || "";
 
     /** Main github action workspace absolute path. */
     workspaceDir = process.env.GITHUB_WORKSPACE || process.cwd();

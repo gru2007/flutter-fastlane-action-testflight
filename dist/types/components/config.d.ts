@@ -24,6 +24,7 @@ export declare class Config {
     ipaDestPath: string;
     draft: string;
     platform: string;
+    testflightGroups: string;
     /** Main github action workspace absolute path. */
     workspaceDir: string;
     /** Flutter project absolute path. */
