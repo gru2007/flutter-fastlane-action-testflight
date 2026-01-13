@@ -12,7 +12,7 @@ supported_languages = [
 ]
 
 platform :ios do
-  desc "Build and upload to App Store"
+  desc "Build and upload to TestFlight"
   lane :deploy do |options|
     version_name = options[:version_name]
     build_number = options[:build_number]
@@ -24,11 +24,11 @@ platform :ios do
     build_dest_path = options[:build_dest_path]
     ios_dir = File.expand_path("../", __dir__)
 
-    # Determine whether to submit for automatic review
-    auto_review_submit = !release_note.nil? && release_note.strip != ""
+    # Determine whether to automatically distribute to external testers
+    auto_distribute_external = !release_note.nil? && release_note.strip != ""
 
-    if auto_review_submit
-      puts "📤 Automatic submission enabled based on provided release notes."
+    if auto_distribute_external
+      puts "📤 Automatic external distribution enabled based on provided release notes."
       release_note = release_note.gsub("\\n", "\n")
 
       # If not supported, set the language code to abbreviation.
@@ -104,26 +104,26 @@ platform :ios do
       FileUtils.mkdir_p(File.dirname(dest_path))
       FileUtils.cp(output_path, dest_path)
 
-      # Upload the build
-      if auto_review_submit == false
-        upload_to_testflight(
-          ipa: output_path,
-          api_key: api_key,
-          distribute_external: false,
-          skip_waiting_for_build_processing: skip_wait_processing,
-        )
+      # Upload the build to TestFlight
+      upload_params = {
+        ipa: output_path,
+        api_key: api_key,
+        skip_waiting_for_build_processing: skip_wait_processing,
+        # Explicitly set app version to prevent automatic normalization (e.g., 1.0 -> 1.0.0)
+        app_version: version_name,
+      }
+
+      # If release notes are provided, automatically distribute to external testers
+      if auto_distribute_external
+        upload_params[:distribute_external] = true
+        upload_params[:beta_app_description] = {release_note_language => release_note}
+        puts "🚀 Will automatically distribute to external testers with release notes."
       else
-        upload_to_app_store(
-          ipa: output_path,
-          api_key: api_key,
-          release_notes: {release_note_language => release_note},
-          force: true,
-          skip_screenshots: true,
-          automatic_release: true,
-          submit_for_review: true,
-          run_precheck_before_submit: false,
-        )
+        upload_params[:distribute_external] = false
+        puts "📦 Uploading to TestFlight (internal only)."
       end
+
+      upload_to_testflight(upload_params)
     end
   end
 end
