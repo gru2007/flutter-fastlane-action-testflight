@@ -109,14 +109,12 @@ platform :ios do
         ipa: output_path,
         api_key: api_key,
         skip_waiting_for_build_processing: skip_wait_processing,
-        # Explicitly set app version to prevent automatic normalization (e.g., 1.0 -> 1.0.0)
-        app_version: version_name,
       }
 
       # If release notes are provided, automatically distribute to external testers
       if auto_distribute_external
         upload_params[:distribute_external] = true
-        upload_params[:beta_app_description] = {release_note_language => release_note}
+        upload_params[:changelog] = release_note
         puts "🚀 Will automatically distribute to external testers with release notes."
       else
         upload_params[:distribute_external] = false
